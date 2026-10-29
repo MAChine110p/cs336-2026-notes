@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CS336 从零开始构建语言模型：第一讲笔记">
+  <title>CS336 · 第一讲笔记</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">CS336 · SPRING 2026</p>
+      <h1>从零开始构建语言模型</h1>
+      <p class="subtitle">第一讲：概览与分词</p>
+      <div class="hero-meta"><span>可执行讲义</span><span>学习笔记</span><span>中文整理</span></div>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-title">LECTURE 01</div>
+      <nav id="toc" aria-label="章节导航"></nav>
+      <a class="source-link" href="https://github.com/stanford-cs336/lectures" target="_blank" rel="noreferrer">查看课程源仓库 ↗</a>
+    </aside>
+    <main class="content">
+      <div class="intro">
+        <p>这是一份从 Python 可执行讲义直接渲染的阅读版笔记。沿着章节阅读，文中的论文、视频和课程资料链接会在新标签页打开。</p>
+      </div>
+      <figure><img src="lectures/images/course-staff.png" alt="讲义插图" loading="lazy"></figure>
+<p>……为大家带来 CS336 的第三次开课。</p>
+<p>第二次开课（2025 年春季）的讲课视频在 <a href="https://www.youtube.com/playlist?list=PLoROMvodv4rOY23Y0BoGoBGgQ1zmU_MT_" target="_blank" rel="noreferrer">YouTube</a> 上。</p>
+<p>有什么新变化？</p>
+<ul>
+<li>沿用同样的'从零开始'理念</li>
+<li>优先讲解性价比最高的概念，不要只见树木不见森林</li>
+<li>更多地覆盖现代语言模型的组成部分（专家混合、长上下文、智能体）</li>
+</ul>
+<section class="note-section" id="section-1"><h2>我们为什么要开设这门课程？</h2>
+<p>问题：研究者们正在与底层技术<strong>脱节</strong>。</p>
+<ul>
+<li>2016 年：研究者自己实现并训练模型。</li>
+<li>2018 年：研究者下载模型（例如 BERT）并进行微调。</li>
+<li>今天：研究者对 API 模型（例如 GPT/Claude/Gemini）进行提示。</li>
+</ul>
+<p>向更高层次的抽象迈进提升了生产力，但是</p>
+<ul>
+<li>这些抽象是存在泄漏的（与编程语言或操作系统不同）。</li>
+<li>仍然有一些基础研究需要拆开整个技术栈才能完成。</li>
+</ul>
+<p>要进行<strong>基础研究</strong>，就必须<strong>完整理解</strong>这项技术。</p>
+<p>本课程的理念：<strong>通过构建来理解</strong>。</p>
+<p>但有一个小小的问题……</p>
+</section>
+<section class="note-section" id="section-2"><h2>语言模型的工业化</h2>
+<figure><img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Industrialisation.jpg" alt="讲义插图" loading="lazy"></figure>
+<p>前沿模型非常昂贵：</p>
+<p>前沿模型是如何构建的，没有任何公开细节。</p>
+<figure><img src="lectures/images/gpt4-no-details.png" alt="讲义插图" loading="lazy"></figure>
+<p>前沿模型对我们来说是遥不可及的。</p>
+<p>我们可以构建小型语言模型（&lt;10 亿参数），但这可能无法代表大型语言模型。</p>
+<figure><img src="lectures/images/roller-flops.png" alt="讲义插图" loading="lazy"></figure>
+<figure><img src="lectures/images/wei-emergence-plot.png" alt="讲义插图" loading="lazy"></figure>
+</section>
+<section class="note-section" id="section-3"><h2>我们在这门课上学到的东西，哪些能迁移到前沿模型上？</h2>
+<p>知识分为三种类型：</p>
+<ul>
+<li><strong>机制</strong>：事物如何工作（Transformer 是什么、模型并行如何运作）</li>
+<li><strong>思维方式</strong>：榨干硬件的每一分性能，认真对待规模扩展</li>
+<li><strong>直觉</strong>：哪些数据和建模决策能带来良好的准确率</li>
+</ul>
+<p>我们可以教授机制和思维方式（这些是可以迁移的）。</p>
+<p>我们只能部分教授直觉（不一定能跨规模迁移）。</p>
+</section>
+<section class="note-section" id="section-4"><h2>直觉？🤷</h2>
+<p>有些设计决策根本无法（尚无法）从道理上论证，纯粹来自实验。</p>
+<figure><img src="lectures/images/divine-benevolence.png" alt="讲义插图" loading="lazy"></figure>
+</section>
+<section class="note-section" id="section-5"><h2>苦涩的教训（The ?? ??）</h2>
+<p>错误解读：规模就是一切，算法不重要。</p>
+<p>正确解读：能够随规模扩展的算法才是重要的。</p>
+<h3>准确率 = 效率 x 资源</h3>
+<p>事实上，规模越大，效率越重要（浪费不起）。</p>
+<p>一个思考框架：在给定的算力和数据预算下，能构建出的最好模型是什么？</p>
+<p>换句话说，<strong>最大化效率</strong>！</p>
+</section>
+<section class="note-section" id="section-6"><h2>前神经网络时代（2010 年代之前）</h2>
+</section>
+<section class="note-section" id="section-7"><h2>神经网络成分（2010 年代）</h2>
+</section>
+<section class="note-section" id="section-8"><h2>早期基础模型（2010 年代末期）</h2>
+</section>
+<section class="note-section" id="section-9"><h2>拥抱规模扩展</h2>
+</section>
+<section class="note-section" id="section-10"><h2>开放模型</h2>
+<p>早期尝试（尝试复现 GPT-3）：</p>
+<p>可信的开放权重模型（权重 + 论文）：</p>
+<p>这些模型正在逼近闭源模型（GPT、Claude、Gemini 等）。</p>
+<p>开源模型（权重 + 论文 + 代码 + 数据）：</p>
+<p>正是开放模型带来的思想让我们得以教授 CS336。</p>
+<p>什么是语言模型？</p>
+<ul>
+<li>2018 年（BERT）：一个用来微调的东西</li>
+<li>2020 年（GPT-3）：一个用来提示的东西</li>
+</ul>
+<p>基本原理是不变的（注意力、内核、优化）。</p>
+<p>只是规格不同（上下文更长，推理效率更加重要）。</p>
+<p>这是一个<em>可执行讲义</em>（executable lecture），一个通过运行来呈现讲义内容的程序。</p>
+<p>可执行讲义让我们可以：</p>
+<ul>
+<li>查看并运行代码（因为一切都是代码！）</li>
+<li>查看讲义的层级结构</li>
+</ul>
+<p>这是一门 5 学分的课程。</p>
+<p>2024 年春季课程评价中的一条评论：</p>
+<p>&gt; <em>整个作业的工作量大致相当于 CS 224n 全部 5 次作业加上期末项目的总和。而这仅仅是第一次作业。</em></p>
+</section>
+<section class="note-section" id="section-11"><h2>你为什么应该选这门课</h2>
+<ul>
+<li>你有一种执念，想要彻底理解事物是如何运作的。</li>
+<li>你想锻炼你的研究工程能力。</li>
+</ul>
+</section>
+<section class="note-section" id="section-12"><h2>你为什么不应该选这门课</h2>
+<ul>
+<li>你这个季度其实想做出研究成果。（去和你的导师聊聊。）</li>
+<li>你想学习 AI 中最热门的新技术（例如多模态、RAG 等）。（你应该去上研讨课。）</li>
+<li>你想在自己的应用领域取得好效果。（你应该直接提示或微调现成的模型。）</li>
+</ul>
+</section>
+<section class="note-section" id="section-13"><h2>如何在家自学跟上进度</h2>
+<ul>
+<li>所有讲义材料和作业都会发布在网上，欢迎自学。</li>
+<li>课程通过 <a href="https://cgoe.stanford.edu/" target="_blank" rel="noreferrer">CGOE</a> 录制。</li>
+</ul>
+</section>
+<section class="note-section" id="section-14"><h2>作业</h2>
+<ul>
+<li>5 次作业（基础知识、系统、缩放定律、数据、对齐）。</li>
+<li>没有脚手架代码，但我们提供单元测试和适配器接口，帮助你检查正确性。</li>
+<li>先在本地实现以测试正确性，然后在集群上运行进行基准测试（准确率和速度）。</li>
+<li>部分作业设有排行榜（在给定训练预算下最小化困惑度）。</li>
+</ul>
+</section>
+<section class="note-section" id="section-15"><h2>AI 使用政策</h2>
+<ul>
+<li>编程智能体可以解出所有作业，但你什么也学不到。</li>
+<li>AI 在回答问题和辅导方面可以非常有用。</li>
+<li>你必须使用我们提供的 AGENTS.md 文件，它要求 AI 以教学为导向。</li>
+<li>请阅读我们的 <a href="https://docs.google.com/document/d/1SZAlExB1qAc9izHt54gwunNpjKE6wXb8Y7yA_e-baK8/edit?tab=t.0" target="_blank" rel="noreferrer">AI 使用政策指南</a>。</li>
+</ul>
+</section>
+<section class="note-section" id="section-16"><h2>算力</h2>
+<ul>
+<li>感谢 <a href="https://modal.com/" target="_blank" rel="noreferrer">Modal</a> 提供算力。🙏</li>
+<li>请阅读关于如何访问和使用算力的<a href="https://docs.google.com/document/d/1cHE0iKVyXLJ3XpIs2XuXTmZ-HMmPk2hIPeCvy-AydMg/edit?tab=t.otis27tacaef" target="_blank" rel="noreferrer">指南</a>。</li>
+</ul>
+<p>目标：能够训练一个基础语言模型</p>
+<p>组成部分：分词、模型架构、训练</p>
+</section>
+<section class="note-section" id="section-17"><h2>分词</h2>
+<p>模型操作的基本单元是什么？</p>
+<p>形式化地说：分词器在原始输入（字节）和整数序列（token）之间进行转换</p>
+<figure><img src="lectures/images/tokenized-example.png" alt="讲义插图" loading="lazy"></figure>
+<p>直觉：把输入切分成频繁出现的块</p>
+<p>效率视角</p>
+<ul>
+<li>缩短上下文长度（1000 字节 → 约 250 个 token）</li>
+<li>自适应计算（在输入中有趣的部分投入更多建模容量）</li>
+</ul>
+<p>这些方法很有前景，但尚未扩展到前沿规模。</p>
+</section>
+<section class="note-section" id="section-18"><h2>模型架构</h2>
+<figure><img src="lectures/images/transformer-architecture.png" alt="讲义插图" loading="lazy"></figure>
+<p>各项改进：</p>
+<ul>
+<li>形状（隐藏维度、深度、头数、专家数）</li>
+</ul>
+</section>
+<section class="note-section" id="section-19"><h2>训练</h2>
+<p>如何设置模型的参数？</p>
+<ul>
+<li>正则化（例如 dropout、权重衰减）</li>
+</ul>
+</section>
+<section class="note-section" id="section-20"><h2>作业 1（基础知识）</h2>
+<ul>
+<li>实现 BPE 分词器</li>
+<li>实现 Transformer、交叉熵损失、AdamW 优化器、训练循环</li>
+<li>进行资源核算</li>
+<li>在 TinyStories 和 OpenWebText 上训练</li>
+</ul>
+<p>高层原则：一切都是为了平衡以下三者：</p>
+<ul>
+<li>表达能力（能表示数据中的复杂依赖关系）</li>
+<li>稳定性（让参数和梯度范数保持在恰到好处的区间）</li>
+<li>效率（在硬件上跑得快，训练和推理都是）</li>
+</ul>
+<p>目标：榨干硬件（GPU 或 TPU）的性能</p>
+<p>组成部分：内核、并行、推理</p>
+</section>
+<section class="note-section" id="section-21"><h2>基础</h2>
+<ul>
+<li>资源核算：模型的内存和计算特性</li>
+</ul>
+<figure><img src="lectures/images/compute-memory.png" alt="讲义插图" loading="lazy"></figure>
+<ul>
+<li>模型参数必须从内存（HBM）搬到计算单元（SM）</li>
+<li>例：B200 在 bf16 下可进行 2.25 PFLOP/秒的运算，内存带宽为 8TB/秒</li>
+<li>Roofline 分析：弄清楚我们究竟受算力约束还是受内存约束</li>
+<li>基准测试与性能分析（nsight）：看看实践中到底发生了什么</li>
+</ul>
+<p><a href="https://docs.nvidia.com/dgx/dgxb200-user-guide/introduction-to-dgxb200.html" target="_blank" rel="noreferrer">DGX B200</a>：</p>
+<figure><img src="https://docs.nvidia.com/dgx/dgxb200-user-guide/_images/dgx-b200-system-topology.png" alt="讲义插图" loading="lazy"></figure>
+</section>
+<section class="note-section" id="section-22"><h2>内核</h2>
+<ul>
+<li>内核是在 GPU 上运行的函数</li>
+<li>使用 PyTorch 时，每个基础算子都会启动一个标准内核</li>
+<li>可以编写自定义内核让 GPU 飞起来</li>
+<li>原则：组织计算以最小化数据搬运</li>
+<li>朴素做法：读 HBM；计算 A；写 HBM；读 HBM；计算 B；写 HBM</li>
+<li>融合做法：读 HBM；计算 A 和 B；写 HBM</li>
+<li>策略：算子融合（矩阵乘法 + 激活函数）、分块（FlashAttention）</li>
+<li>Warp 分支发散、内存合并访问、bank 冲突、占用率、批量异步内存传输</li>
+<li>用 CUDA/<strong>Triton</strong>/CUTLASS/ThunderKittens 编写内核</li>
+</ul>
+</section>
+<section class="note-section" id="section-23"><h2>并行</h2>
+<ul>
+<li>如果我们有 1024 块 GPU 呢？</li>
+<li>GPU 之间的数据搬运更慢，但'最小化数据搬运'的原则依然成立</li>
+<li>使用经典的集合通信操作（例如 gather、??、??-??）</li>
+<li>将内存（参数、激活值、梯度、优化器状态）分片到多块 GPU 上</li>
+<li>如何切分计算：{数据、张量、流水线、序列、专家}并行</li>
+</ul>
+</section>
+<section class="note-section" id="section-24"><h2>推理</h2>
+<p>目标：根据提示生成 token（真正使用模型时必需！）</p>
+<p>强化学习、测试时计算、评估也需要推理</p>
+<p>两个阶段：prefill（预填充）和 decode（解码）</p>
+<figure><img src="lectures/images/prefill-decode.png" alt="讲义插图" loading="lazy"></figure>
+<ul>
+<li>Prefill（与训练类似）：token 是给定的，可以一次性全部处理（受算力约束）</li>
+<li>Decode：需要一次生成一个 token（受内存约束）</li>
+</ul>
+<p>加速解码的方法：</p>
+<ul>
+<li>使用更便宜的模型（通过模型剪枝、量化、蒸馏）</li>
+<li>投机解码：用更便宜的"草稿"模型生成多个 token，再用完整模型并行打分（精确解码！）</li>
+<li>系统优化：融合内核、连续批处理</li>
+</ul>
+</section>
+<section class="note-section" id="section-25"><h2>作业 2（系统）</h2>
+<ul>
+<li>用 Triton 实现融合的 RMSNorm 内核</li>
+<li>实现分布式数据并行训练</li>
+<li>实现优化器状态分片</li>
+<li>对实现进行基准测试和性能分析</li>
+</ul>
+<p>推荐书籍：<a href="https://jax-ml.github.io/scaling-book/" target="_blank" rel="noreferrer">How to Scale Your Model</a></p>
+<ul>
+<li>在概念层面清晰地讲解了如何构建 LLM 系统</li>
+<li>出自 Google，以 TPU 为主，但高层概念是相通的</li>
+</ul>
+<p>背景：如果你有 1e25 FLOPs 的算力，你会用哪些超参数来训练一个好模型？</p>
+<p>在全规模下做超参数调优太贵了！</p>
+<p>关键的概念转变：不要只考虑单一规模，而是想一个<strong>缩放配方</strong>（?? recipe，FLOPs → 超参数）</p>
+<p>对于一个缩放配方：</p>
+<ul>
+<li>做实验，在多个较小规模下计算损失（例如最高到 1e24 FLOPs）</li>
+<li>拟合一条缩放定律，预测该缩放配方在目标规模下的损失（例如 1e25 FLOPs）</li>
+</ul>
+<p>现在你可以：</p>
+<p>1. 利用小规模实验来优化面向更大规模的缩放配方</p>
+<p>2. 在真正跑实验之前，就预测出目标规模下的损失！</p>
+<p>缩放定律不会自动出现，需要精心构造缩放配方。</p>
+<p>可预测性至少与最优性同等重要！</p>
+<p>问题：给定 FLOPs 预算（C = 6 N D），应该用更大的模型（N）还是在更多 token 上训练（D）？</p>
+<ul>
+<li>ISOFLOP 曲线：对多个较小的 FLOPs 预算，找出最优的 N</li>
+<li>然后拟合缩放定律，外推到大的 FLOPs 预算</li>
+</ul>
+<figure><img src="lectures/images/chinchilla-isoflop.png" alt="讲义插图" loading="lazy"></figure>
+<p>一句话结论：D = 20 N 大致最优（例如 70B 参数模型应在约 1.4T token 上训练）</p>
+<p>注意：这没有考虑推理成本（此时更想要较小的模型）</p>
+<figure><img src="https://pbs.twimg.com/media/HDuErvvbsAAQ5Yt?format=jpg&amp;name=4096x4096" alt="讲义插图" loading="lazy"></figure>
+<p>本周应该就能训练完成，到时候看看我们能多好地匹配预先注册的损失！</p>
+</section>
+<section class="note-section" id="section-26"><h2>作业 3（缩放定律）</h2>
+<ul>
+<li>我们基于以往的运行定义一个训练 API（超参数 → 损失）</li>
+<li>提交"训练任务"（在 FLOPs 预算内）并收集数据点</li>
+<li>对数据点拟合缩放定律</li>
+<li>提交外推的超参数和损失预测</li>
+<li>排行榜：在给定 FLOPs 预算下最小化损失</li>
+</ul>
+<p>问题：我们希望模型具备哪些能力？</p>
+<p>多语言？擅长对话？智能体编程能力？</p>
+</section>
+<section class="note-section" id="section-27"><h2>评估</h2>
+<p>评估的目的是什么？</p>
+<p>1. 内部：指导模型开发（跨规模的平滑性、相对性能重要）</p>
+<p>2. 外部：衡量真实用例的绝对质量（生态效度重要）</p>
+<p>评估示例：</p>
+<p>1. 困惑度：最好在私有文档上运行，而不是互联网上的（避免数据污染）</p>
+<p>2. 高级用例：GPQA、HLE、SWE-Bench、Terminal-Bench</p>
+<p>语言模型是通用的，因此需要多样化的评估集！</p>
+</section>
+<section class="note-section" id="section-28"><h2>数据收集</h2>
+<ul>
+<li>数据不会从天上掉下来。</li>
+<li>来源：从互联网爬取的网页、书籍、arXiv 论文、GitHub 代码等。</li>
+</ul>
+<figure><img src="https://ar5iv.labs.arxiv.org/html/2101.00027/assets/pile_chart2.png" alt="讲义插图" loading="lazy"></figure>
+<ul>
+<li>原始数据是 HTML、PDF、目录（而非文本），需要处理</li>
+</ul>
+</section>
+<section class="note-section" id="section-29"><h2>数据处理</h2>
+<ul>
+<li>转换：把 HTML/PDF 转成文本（提取正文）</li>
+<li>过滤：保留高质量数据，去除有害内容（借助分类器）</li>
+<li>去重：节省算力，避免记忆化；使用布隆过滤器或 MinHash</li>
+</ul>
+<p>数据的类型：</p>
+<ul>
+<li>预训练数据：大规模且多样</li>
+<li>中期训练数据：高质量，包括长上下文</li>
+<li>后训练数据：监督微调（对话、带工具调用的智能体轨迹）</li>
+</ul>
+</section>
+<section class="note-section" id="section-30"><h2>作业 4（数据）</h2>
+<ul>
+<li>把 ?? ?? 的 HTML 转成文本</li>
+<li>训练分类器，过滤质量和有害内容</li>
+<li>用 MinHash 去重</li>
+<li>排行榜：在给定 token 预算下最小化困惑度</li>
+</ul>
+<p>到目前为止，我们在完全监督下训练模型（预测下一个 token）。</p>
+<p>现在模型已经比较像样了，我们可以从<strong>弱监督</strong>进一步改进它。</p>
+<p>为什么用弱监督？因为评价一个东西往往比生成它更容易。</p>
+<p>基本模板：</p>
+<p>1. 让模型生成回复。</p>
+<p>2. 用{人类、验证器、LM 裁判}给回复打分。</p>
+<p>3. 更新模型，使其偏好更好的回复。</p>
+<p>算法：</p>
+<p>挑战：</p>
+<ul>
+<li>RL 算法不稳定且难以调参</li>
+<li>在大规模下，这需要大量新基础设施（异步 rollout 的推理）</li>
+<li>需要不断在系统效率与在策略（?-policy）程度之间做权衡</li>
+</ul>
+</section>
+<section class="note-section" id="section-31"><h2>作业 5（对齐）</h2>
+<ul>
+<li>实现直接偏好优化（DPO）</li>
+<li>实现组相对偏好优化（GRPO）</li>
+</ul>
+<p>记住，一切的核心都是<strong>效率</strong>：</p>
+<ul>
+<li>资源：数据 + 硬件（算力、内存、通信带宽）</li>
+<li>在固定的资源下，如何训练出最好的模型？</li>
+</ul>
+<p>如今，我们受限于算力，因此各种设计决策都体现着如何榨干给定硬件的性能。</p>
+<ul>
+<li>系统：显然与效率有关</li>
+<li>分词：直接处理原始字节很优雅，但在当今的模型架构下计算效率低</li>
+<li>模型架构：许多改动都是为了减少内存或 FLOPs（例如共享 KV 缓存、滑动窗口注意力）</li>
+<li>数据过滤：避免把宝贵的算力浪费在糟糕/无关的数据上</li>
+<li>缩放定律：用更少的算力在小型模型上做超参数调优</li>
+</ul>
+<p>明天，我们将变为受数据约束……</p>
+<p>原始文本通常表示为 Unicode 字符串。</p>
+<p>语言模型在 token 序列上定义概率分布（通常用整数索引表示）。</p>
+<p>所以我们需要一个把字符串<em>编码</em>为 token 的过程。</p>
+<p>我们还需要一个把 token <em>解码</em>回字符串的过程。</p>
+</section>
+<section class="note-section" id="section-32"><h2>观察</h2>
+<ul>
+<li>一个单词及其前面的空格属于同一个 token（例如 " world"）。</li>
+<li>同一个词在开头和中间的表示不同（例如 "hello hello"）。</li>
+<li>数字每几位被切成一个 token。</li>
+</ul>
+<p>下面是 OpenAI 的 GPT-5 分词器（tiktoken）的实际效果。</p>
+<p>验证 encode() 和 decode() 可以往返还原：</p>
+<p>压缩比：每个 token 对应的字节数</p>
+<p>压缩比越大，序列越短（这是好事，因为注意力对序列长度是平方级的）。</p>
+<p>可以通过增大<strong>词表规模</strong>来提高压缩比（可能的 token 取值增多），但这会导致稀疏性。</p>
+<p>Unicode 字符串是 Unicode 字符的序列。</p>
+<p>每个字符可以通过 <code>ord</code> 转换为码点（整数）。</p>
+<p>也可以通过 <code>chr</code> 转换回来。</p>
+<p>现在我们来构建一个 <code>Tokenizer</code>，并确保它能往返还原：</p>
+<p>问题 1：词表非常庞大。</p>
+<p>问题 2：很多字符相当罕见（例如 🌍），对词表的利用效率很低。</p>
+<p>这个分词器集两家之短（词表大，压缩比又低）。</p>
+<p>Unicode 字符串可以表示为字节序列，每个字节可由 0 到 255 之间的整数表示。</p>
+<p>有些 Unicode 字符只用一个字节表示：</p>
+<p>另一些则需要多个字节：</p>
+<p>现在我们来构建一个 <code>Tokenizer</code>，并确保它能往返还原：</p>
+<p>词表非常小巧：一个字节可以表示 256 个值。</p>
+<p>那压缩比呢？</p>
+<p>压缩比很糟糕，这意味着序列会太长。</p>
+<p>考虑到 Transformer 的上下文长度有限（注意力是平方级的），这看起来不太妙……</p>
+<p>另一种方法（更接近传统 NLP 的做法）是把字符串切分成单词。</p>
+<p>这个正则表达式把所有字母数字字符保持在了一起（单词）。</p>
+<p>要把它变成一个 <code>Tokenizer</code>，我们需要把这些块映射成整数。</p>
+<p>然后，我们可以建立从每个块到整数的映射。</p>
+<p>好处：每个 token 都是有意义的（毕竟单词是人类发明的）。</p>
+<p>压缩比不错，但词表规模可能非常巨大。</p>
+<p>此外：</p>
+<ul>
+<li>很多词很罕见，模型从中学不到多少东西。</li>
+<li>这种方法显然无法提供固定的词表规模。</li>
+<li>训练时没见过的新词会被赋予特殊的 UNK token，这很丑陋，还会扰乱困惑度的计算。</li>
+</ul>
+</section>
+<section class="note-section" id="section-33"><h2>字节对编码（BPE）</h2>
+<p>(在此之前的论文都使用基于单词的分词。)</p>
+<p>基本思想：在原始文本上<em>训练</em>分词器，构建一个为数据量身定制的词表。</p>
+<p>直觉：常见的字节序列用单个 token 表示，罕见的序列用多个 token 表示。</p>
+<p>概要：从每个字节作为一个 token 开始，反复合并最常出现的相邻 token 对。</p>
+</section>
+<section class="note-section" id="section-34"><h2>训练分词器</h2>
+</section>
+<section class="note-section" id="section-35"><h2>使用分词器</h2>
+<p>现在，给定一段新文本，我们就可以对其进行编码。</p>
+<p>在作业 1 中，你将在以下几个方面超越这个实现：</p>
+<ul>
+<li>encode() 目前会遍历所有合并规则。只需遍历真正相关的合并规则。</li>
+<li>检测并保留特殊 token（例如 &lt;|endoftext|&gt;）。</li>
+<li>使用预分词（例如 GPT-2 分词器的正则表达式）。</li>
+<li>尽量让实现跑得尽可能快。</li>
+</ul>
+<p>总结：</p>
+<ul>
+<li>分词器：字符串 ↔ token（整数索引）</li>
+<li>基于字符、字节、单词的分词都是很不理想的</li>
+<li>BPE 是一种有效的、数据驱动的启发式方法</li>
+<li>分词目前是独立的步骤，也许有一天能从字节开始端到端完成……</li>
+</ul>
+<p>但无论什么方案都需要满足：</p>
+<p>1. 模型（例如 Transformer）应该在序列（文本、视频、DNA 等）的块（抽象单元）上操作</p>
+<p>2. 块应该是可变长度的（给有趣的块分配更多模型容量）</p>
+<p>下节课：资源核算</p>
+</section>
+      <footer>CS336 · Language Modeling from Scratch · Spring 2026</footer>
+    </main>
+  </div>
+  <script>
+    const toc = document.querySelector('#toc');
+    document.querySelectorAll('.note-section').forEach((section) => {
+      const link = document.createElement('a');
+      link.href = '#' + section.id;
+      link.textContent = section.querySelector('h2').textContent;
+      toc.appendChild(link);
+    });
+  </script>
+</body>
+</html>
