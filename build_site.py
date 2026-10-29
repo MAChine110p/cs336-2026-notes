@@ -184,11 +184,13 @@ def build() -> None:
       <div class="hero-meta"><span>可执行讲义</span><span>学习笔记</span><span>中文整理</span></div>
     </div>
   </header>
+  <button class="outline-trigger" type="button" aria-expanded="false" aria-controls="toc">☰ <span>章节大纲</span></button>
+  <div class="outline-backdrop" aria-hidden="true"></div>
   <div class="layout">
-    <aside class="sidebar">
-      <button class="sidebar-toggle" type="button" aria-expanded="true" aria-controls="toc">
+    <aside class="sidebar" aria-label="章节大纲">
+      <button class="sidebar-toggle" type="button" aria-expanded="false" aria-controls="toc">
         <span class="toggle-icon" aria-hidden="true">‹</span>
-        <span class="toggle-label">收起大纲</span>
+        <span class="toggle-label">关闭大纲</span>
       </button>
       <div class="sidebar-title">LECTURE 01</div>
       <nav id="toc" aria-label="章节导航"></nav>
@@ -203,18 +205,24 @@ def build() -> None:
     </main>
   </div>
   <script>
-    const layout = document.querySelector('.layout');
+    const sidebar = document.querySelector('.sidebar');
+    const trigger = document.querySelector('.outline-trigger');
+    const backdrop = document.querySelector('.outline-backdrop');
     const toggle = document.querySelector('.sidebar-toggle');
     const toc = document.querySelector('#toc');
-    const setSidebarState = (collapsed) => {{
-      layout.classList.toggle('sidebar-collapsed', collapsed);
-      toggle.setAttribute('aria-expanded', String(!collapsed));
-      toggle.querySelector('.toggle-label').textContent = collapsed ? '展开大纲' : '收起大纲';
-      toggle.querySelector('.toggle-icon').textContent = collapsed ? '›' : '‹';
-      localStorage.setItem('cs336-sidebar-collapsed', String(collapsed));
+    const setSidebarState = (open) => {{
+      sidebar.classList.toggle('sidebar-open', open);
+      backdrop.classList.toggle('backdrop-visible', open);
+      trigger.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.querySelector('.toggle-label').textContent = '关闭大纲';
+      localStorage.setItem('cs336-sidebar-open', String(open));
     }};
-    toggle.addEventListener('click', () => {{
-      setSidebarState(!layout.classList.contains('sidebar-collapsed'));
+    trigger.addEventListener('click', () => setSidebarState(true));
+    toggle.addEventListener('click', () => setSidebarState(false));
+    backdrop.addEventListener('click', () => setSidebarState(false));
+    document.addEventListener('keydown', (event) => {{
+      if (event.key === 'Escape') setSidebarState(false);
     }});
     document.querySelectorAll('.note-section').forEach((section) => {{
       const link = document.createElement('a');
@@ -222,7 +230,7 @@ def build() -> None:
       link.textContent = section.querySelector('h2').textContent;
       toc.appendChild(link);
     }});
-    setSidebarState(localStorage.getItem('cs336-sidebar-collapsed') === 'true');
+    setSidebarState(localStorage.getItem('cs336-sidebar-open') === 'true');
   </script>
 </body>
 </html>
