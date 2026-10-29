@@ -27,8 +27,14 @@ h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 4.5rem); line-height: 1.12; letter
 .subtitle { margin: 20px 0 26px; font-size: 1.25rem; color: #dcecff; }
 .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; }
 .hero-meta span { border: 1px solid #79a7cf; border-radius: 999px; padding: 3px 13px; color: #e8f4ff; font-size: 13px; }
-.layout { max-width: 1160px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 42px; margin: 0 auto; padding: 42px 24px 70px; }
+.layout { max-width: 1160px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 42px; margin: 0 auto; padding: 42px 24px 70px; transition: grid-template-columns .22s ease, gap .22s ease; }
+.layout.sidebar-collapsed { grid-template-columns: 42px minmax(0, 1fr); gap: 20px; }
 .sidebar { position: sticky; top: 24px; align-self: start; }
+.sidebar-toggle { display: flex; align-items: center; gap: 7px; width: 100%; margin-bottom: 14px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--paper); cursor: pointer; font: inherit; font-size: 13px; white-space: nowrap; }
+.sidebar-toggle:hover { border-color: #b7c9e8; color: var(--blue); background: var(--blue-soft); }
+.toggle-icon { width: 16px; font-size: 20px; line-height: 1; }
+.sidebar-collapsed .sidebar-toggle { justify-content: center; padding: 7px 4px; }
+.sidebar-collapsed .toggle-label, .sidebar-collapsed .sidebar-title, .sidebar-collapsed #toc, .sidebar-collapsed .source-link { display: none; }
 .sidebar-title { margin-bottom: 14px; color: var(--blue); font-size: 12px; font-weight: 800; letter-spacing: .14em; }
 #toc { display: grid; gap: 4px; }
 #toc a { border-left: 2px solid transparent; padding: 6px 12px; color: var(--muted); font-size: 14px; line-height: 1.45; text-decoration: none; }
@@ -53,6 +59,8 @@ footer { padding: 20px 0; color: var(--muted); font-size: 13px; text-align: cent
   .hero { padding: 52px 20px 46px; }
   .layout { display: block; padding: 24px 14px 50px; }
   .sidebar { position: static; margin-bottom: 24px; }
+  .sidebar-toggle { width: auto; }
+  .layout.sidebar-collapsed { display: block; }
   #toc { display: flex; overflow-x: auto; gap: 6px; padding-bottom: 8px; }
   #toc a { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; background: #fff; }
   .source-link { margin-top: 12px; }
